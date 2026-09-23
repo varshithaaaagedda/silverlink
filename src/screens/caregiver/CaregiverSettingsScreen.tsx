@@ -4,12 +4,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { theme } from '../../theme/theme';
 
-export const CaregiverSettingsScreen: React.FC = () => {
-  const { switchRole, currentUser } = useApp();
+export const CaregiverSettingsScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
+  const { switchRole, currentUser, caregiverSettings, updateCaregiverSettings, logout } = useApp();
 
-  const [pushNotifs, setPushNotifs] = useState(true);
-  const [sosCallout, setSosCallout] = useState(true);
-  const [missedDoseTimeout, setMissedDoseTimeout] = useState('30 mins');
+  const timeouts = ['15 mins', '30 mins', '45 mins', '60 mins'];
+
+  const handleLogout = () => {
+    logout();
+    if (navigation) {
+      navigation.navigate('Auth');
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -34,10 +39,10 @@ export const CaregiverSettingsScreen: React.FC = () => {
             <Text style={styles.rowSub}>Instant high-priority notification when SOS is pressed</Text>
           </View>
           <Switch
-            value={sosCallout}
-            onValueChange={setSosCallout}
+            value={caregiverSettings.sosCallout}
+            onValueChange={val => updateCaregiverSettings({ sosCallout: val })}
             trackColor={{ false: '#CBD5E1', true: '#BFDBFE' }}
-            thumbColor={sosCallout ? '#2563EB' : '#94A3B8'}
+            thumbColor={caregiverSettings.sosCallout ? '#2563EB' : '#94A3B8'}
           />
         </View>
 
@@ -47,10 +52,10 @@ export const CaregiverSettingsScreen: React.FC = () => {
             <Text style={styles.rowSub}>Alert if dose remains unconfirmed after scheduled time</Text>
           </View>
           <Switch
-            value={pushNotifs}
-            onValueChange={setPushNotifs}
+            value={caregiverSettings.pushNotifs}
+            onValueChange={val => updateCaregiverSettings({ pushNotifs: val })}
             trackColor={{ false: '#CBD5E1', true: '#BFDBFE' }}
-            thumbColor={pushNotifs ? '#2563EB' : '#94A3B8'}
+            thumbColor={caregiverSettings.pushNotifs ? '#2563EB' : '#94A3B8'}
           />
         </View>
 
@@ -59,8 +64,26 @@ export const CaregiverSettingsScreen: React.FC = () => {
             <Text style={styles.rowLabel}>Missed Dose Timeout Threshold</Text>
             <Text style={styles.rowSub}>Time before marking pending dose as missed</Text>
           </View>
-          <View style={styles.timeoutChip}>
-            <Text style={styles.timeoutText}>{missedDoseTimeout}</Text>
+          <View style={styles.timeoutRow}>
+            {timeouts.map(t => (
+              <TouchableOpacity
+                key={t}
+                style={[
+                  styles.timeoutChip,
+                  caregiverSettings.missedDoseTimeout === t && styles.timeoutChipActive,
+                ]}
+                onPress={() => updateCaregiverSettings({ missedDoseTimeout: t })}
+              >
+                <Text
+                  style={[
+                    styles.timeoutText,
+                    caregiverSettings.missedDoseTimeout === t && styles.timeoutTextActive,
+                  ]}
+                >
+                  {t}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </View>
@@ -74,6 +97,14 @@ export const CaregiverSettingsScreen: React.FC = () => {
         <TouchableOpacity style={styles.switchBtn} onPress={() => switchRole('senior')}>
           <Ionicons name="swap-horizontal" size={20} color="#FFFFFF" />
           <Text style={styles.switchBtnText}>Switch to Senior Interface 👵</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={handleLogout}
+        >
+          <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+          <Text style={styles.logoutBtnText}>Switch Profile / Sign Out</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -155,18 +186,33 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
+  timeoutRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    maxWidth: 220,
+    justifyContent: 'flex-end',
+  },
   timeoutChip: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#CBD5E1',
+  },
+  timeoutChipActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
   },
   timeoutText: {
-    color: '#2563EB',
+    color: '#475569',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  timeoutTextActive: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 13,
   },
   switchBtn: {
     backgroundColor: '#0F766E',
@@ -182,5 +228,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  logoutBtn: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    height: 50,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  logoutBtnText: {
+    color: '#DC2626',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });

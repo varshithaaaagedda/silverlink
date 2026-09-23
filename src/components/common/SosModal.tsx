@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
@@ -9,7 +9,7 @@ export const SosModal: React.FC = () => {
   const { isSosActive, cancelSos, currentUser } = useApp();
   const [countdown, setCountdown] = useState<number>(3);
   const [isAlertSent, setIsAlertSent] = useState<boolean>(false);
-  const pulseAnim = new Animated.Value(1);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     let timer: NodeJS.Timeout;

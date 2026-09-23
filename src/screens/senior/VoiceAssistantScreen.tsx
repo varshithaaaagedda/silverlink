@@ -77,9 +77,12 @@ export const VoiceAssistantScreen: React.FC<{ navigation: any }> = ({ navigation
         setTimeout(() => navigation.navigate('SeniorHome'), 2000);
       } else if (result.navigationTarget === 'DailyCheckIn') {
         setTimeout(() => navigation.navigate('DailyCheckIn'), 2000);
+      } else if (result.navigationTarget === 'FamilyContacts') {
+        setTimeout(() => navigation.navigate('FamilyContacts'), 2000);
       } else if (result.contactToCall) {
         setTimeout(() => {
-          alert(`Calling ${result.contactToCall?.name} (${result.contactToCall?.phone})...`);
+          SpeechService.speakText(`Calling ${result.contactToCall?.name}`);
+          navigation.navigate('FamilyContacts');
         }, 1500);
       }
     }, 600);

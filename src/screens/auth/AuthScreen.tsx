@@ -4,16 +4,30 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { theme } from '../../theme/theme';
 
-export const AuthScreen: React.FC = () => {
+export const AuthScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const { switchRole } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const handleSelectRole = (newRole: 'senior' | 'caregiver') => {
+    switchRole(newRole);
+    if (navigation && navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {navigation && navigation.canGoBack() && (
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#38BDF8" />
+          <Text style={styles.backBtnText}>Back to Dashboard</Text>
+        </TouchableOpacity>
+      )}
+
       <View style={styles.heroBanner}>
         <View style={styles.logoIconBg}>
-          <Ionicons name="heart-pulse-sharp" size={48} color="#FFFFFF" />
+          <Ionicons name="pulse" size={48} color="#FFFFFF" />
         </View>
         <Text style={styles.appTitle}>SilverLink</Text>
         <Text style={styles.appSub}>Keeping Seniors Connected and Safe</Text>
@@ -26,7 +40,7 @@ export const AuthScreen: React.FC = () => {
 
         <TouchableOpacity
           style={styles.demoRoleBtnSenior}
-          onPress={() => switchRole('senior')}
+          onPress={() => handleSelectRole('senior')}
         >
           <Text style={styles.demoEmoji}>👵</Text>
           <View style={styles.demoTextCol}>
@@ -38,7 +52,7 @@ export const AuthScreen: React.FC = () => {
 
         <TouchableOpacity
           style={styles.demoRoleBtnCaregiver}
-          onPress={() => switchRole('caregiver')}
+          onPress={() => handleSelectRole('caregiver')}
         >
           <Text style={styles.demoEmoji}>📱</Text>
           <View style={styles.demoTextCol}>
@@ -198,5 +212,17 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  backBtnText: {
+    color: '#38BDF8',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

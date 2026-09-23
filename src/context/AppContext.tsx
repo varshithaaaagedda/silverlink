@@ -1,7 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, Medication, DailyCheckIn, CaregiverAlert, FamilyContact, SeniorStatus } from '../types';
-import { DataService, INITIAL_USER_SENIOR, INITIAL_USER_CAREGIVER } from '../services/dataService';
+import {
+  DataService,
+  INITIAL_USER_SENIOR,
+  INITIAL_USER_CAREGIVER,
+  CaregiverSettings,
+  INITIAL_CAREGIVER_SETTINGS,
+} from '../services/dataService';
 import { emitCheckInCompleted } from '../features/checkin/checkinEvents';
+import { seniorEventService } from '../services/senior/eventService';
+import { SeniorEvent } from '../types/events';
 
 interface AppContextType {
   currentUser: UserProfile;
@@ -12,6 +20,9 @@ interface AppContextType {
   alerts: CaregiverAlert[];
   contacts: FamilyContact[];
   seniorStatus: SeniorStatus;
+  caregiverSettings: CaregiverSettings;
+  updateCaregiverSettings: (settings: Partial<CaregiverSettings>) => Promise<void>;
+  updateSeniorStatus: (status: Partial<SeniorStatus>) => Promise<void>;
   audioEnabled: boolean;
   setAudioEnabled: (enabled: boolean) => void;
   highContrast: boolean;
@@ -25,12 +36,16 @@ interface AppContextType {
   markMedicationPending: (id: string) => Promise<void>;
   markMedicationStatus: (id: string, status: any) => Promise<void>;
   addMedication: (med: Omit<Medication, 'id' | 'seniorUid' | 'status'>) => Promise<void>;
+  updateMedication: (med: Medication) => Promise<void>;
+  deleteMedication: (id: string) => Promise<void>;
   activeReminderMed: Medication | null;
   triggerReminderModal: (med: Medication) => void;
   closeReminderModal: () => void;
   submitCheckIn: (mood: 'good' | 'okay' | 'bad', note?: string, symptoms?: string[]) => Promise<void>;
   acknowledgeAlert: (id: string) => Promise<void>;
+  clearAcknowledgedAlerts: () => Promise<void>;
   refreshData: () => Promise<void>;
+  logout: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -49,6 +64,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     locationName: 'Home - Oakridge Residence',
   });
 
+  const [caregiverSettings, setCaregiverSettings] = useState<CaregiverSettings>(INITIAL_CAREGIVER_SETTINGS);
+
   const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
   const [highContrast, setHighContrast] = useState<boolean>(false);
   const [isSosActive, setIsSosActive] = useState<boolean>(false);
@@ -60,16 +77,118 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const alertsData = await DataService.getAlerts();
     const contactsData = await DataService.getContacts();
     const statusData = await DataService.getSeniorStatus();
+    const settingsData = await DataService.getCaregiverSettings();
 
     setMedications(medsData);
     setCheckIns(checkInsData);
     setAlerts(alertsData);
     setContacts(contactsData);
     setSeniorStatus(statusData);
+    setCaregiverSettings(settingsData);
   };
 
   useEffect(() => {
     loadData();
+
+    // Subscribe to seniorEventService for real-time Caregiver & UI reactive synchronization
+    const unsubscribe = seniorEventService.subscribe(async (event: SeniorEvent) => {
+      setSeniorStatus(prev => ({ ...prev, lastActiveTime: 'Just now' }));
+      DataService.saveSeniorStatus({ lastActiveTime: 'Just now' }).catch(() => {});
+
+      switch (event.eventType) {
+        case 'SOS_TRIGGERED': {
+          setIsSosActive(true);
+          const alertUpdated = await DataService.addAlert({
+            type: 'sos',
+            severity: 'critical',
+            title: '🚨 EMERGENCY SOS TRIGGERED!',
+            message:
+              event.payload.customMessage ||
+              'Senior pressed Emergency SOS! Immediate family caregiver attention required.',
+          });
+          setAlerts(alertUpdated);
+          break;
+        }
+        case 'ROUTINE_DEVIATION': {
+          const alertUpdated = await DataService.addAlert({
+            type: 'missed_medicine',
+            severity: event.payload.severity === 'HIGH' ? 'critical' : 'medium',
+            title: 'Routine Deviation Detected',
+            message:
+              event.payload.reason ||
+              "Activity delayed outside Eleanor's usual morning routine window.",
+          });
+          setAlerts(alertUpdated);
+          break;
+        }
+        case 'WELLBEING_HELP_REQUESTED': {
+          setIsSosActive(true);
+          const alertUpdated = await DataService.addAlert({
+            type: 'sos',
+            severity: 'critical',
+            title: '🚨 Senior Requested Immediate Help',
+            message: 'Senior selected "I NEED HELP" during SilverPulse routine check.',
+          });
+          setAlerts(alertUpdated);
+          break;
+        }
+        case 'MEDICINE_TAKEN': {
+          setMedications(prev =>
+            prev.map(m =>
+              m.id === event.payload.medicineId
+                ? {
+                    ...m,
+                    status: 'taken',
+                    lastTakenTime:
+                      new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) +
+                      ' Today',
+                  }
+                : m
+            )
+          );
+          break;
+        }
+        case 'MEDICINE_SKIPPED': {
+          setMedications(prev =>
+            prev.map(m =>
+              m.id === event.payload.medicineId ? { ...m, status: 'skipped' } : m
+            )
+          );
+          const alertUpdated = await DataService.addAlert({
+            type: 'missed_medicine',
+            severity: 'medium',
+            title: `Medication Skipped: ${event.payload.medicineName}`,
+            message: `${event.payload.medicineName} was marked skipped (${event.payload.reason || 'Senior chose to skip'}).`,
+          });
+          setAlerts(alertUpdated);
+          break;
+        }
+        case 'MEDICINE_MISSED': {
+          setMedications(prev =>
+            prev.map(m =>
+              m.id === event.payload.medicineId ? { ...m, status: 'missed' } : m
+            )
+          );
+          const alertUpdated = await DataService.addAlert({
+            type: 'missed_medicine',
+            severity: 'high',
+            title: `Medication Missed: ${event.payload.medicineName}`,
+            message: `${event.payload.medicineName} scheduled for ${event.payload.scheduledTime} was not taken.`,
+          });
+          setAlerts(alertUpdated);
+          break;
+        }
+        case 'CHECKIN_COMPLETED': {
+          const freshCheckIns = await DataService.getCheckIns();
+          setCheckIns(freshCheckIns);
+          break;
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const switchRole = (newRole: UserRole) => {
@@ -79,6 +198,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else {
       setCurrentUser(INITIAL_USER_CAREGIVER);
     }
+  };
+
+  const logout = () => {
+    switchRole('senior');
+  };
+
+  const updateSeniorStatus = async (statusUpdate: Partial<SeniorStatus>) => {
+    const updated = await DataService.saveSeniorStatus(statusUpdate);
+    setSeniorStatus(updated);
+  };
+
+  const updateCaregiverSettings = async (settingsUpdate: Partial<CaregiverSettings>) => {
+    const newSettings = { ...caregiverSettings, ...settingsUpdate };
+    const saved = await DataService.saveCaregiverSettings(newSettings);
+    setCaregiverSettings(saved);
   };
 
   const markMedicationTaken = async (id: string) => {
@@ -119,6 +253,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMedications(updated);
   };
 
+  const updateMedication = async (med: Medication) => {
+    const updated = await DataService.updateMedication(med);
+    setMedications(updated);
+  };
+
+  const deleteMedication = async (id: string) => {
+    const updated = await DataService.deleteMedication(id);
+    setMedications(updated);
+  };
+
   const submitCheckIn = async (mood: 'good' | 'okay' | 'bad', note?: string, symptoms?: string[]) => {
     const updated = await DataService.addCheckIn({ mood, note, symptoms });
     setCheckIns(updated);
@@ -140,6 +284,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const acknowledgeAlert = async (id: string) => {
     const updated = await DataService.acknowledgeAlert(id);
+    setAlerts(updated);
+  };
+
+  const clearAcknowledgedAlerts = async () => {
+    const updated = await DataService.clearAcknowledgedAlerts();
     setAlerts(updated);
   };
 
@@ -169,6 +318,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         alerts,
         contacts,
         seniorStatus,
+        updateSeniorStatus,
+        caregiverSettings,
+        updateCaregiverSettings,
         audioEnabled,
         setAudioEnabled,
         highContrast,
@@ -182,12 +334,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markMedicationPending,
         markMedicationStatus,
         addMedication,
+        updateMedication,
+        deleteMedication,
         activeReminderMed,
         triggerReminderModal,
         closeReminderModal,
         submitCheckIn,
         acknowledgeAlert,
+        clearAcknowledgedAlerts,
         refreshData: loadData,
+        logout,
       }}
     >
       {children}
