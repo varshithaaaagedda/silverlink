@@ -9,7 +9,7 @@ import { emitMedicineTaken } from '../../features/medication/medicationEvents';
 import { theme } from '../../theme/theme';
 
 export const SeniorHomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { currentUser, medications, checkIns, markMedicationTaken, contacts } = useApp();
+  const { currentUser, medications, checkIns, markMedicationTaken, contacts, highContrast } = useApp();
 
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
@@ -251,12 +251,23 @@ export const SeniorHomeScreen: React.FC<{ navigation: any }> = ({ navigation }) 
               style={styles.callCircleBtn}
               onPress={() => {
                 SpeechService.speakText(`Calling ${primaryContact.name}`);
-                alert(`Calling ${primaryContact.name} (${primaryContact.phone})...`);
+                navigation.navigate('FamilyContacts');
               }}
+              accessibilityLabel={`Call ${primaryContact.name}`}
             >
               <Ionicons name="call" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={styles.allContactsShortcutBtn}
+            onPress={() => navigation.navigate('FamilyContacts')}
+          >
+            <Ionicons name="people-outline" size={20} color="#0F766E" />
+            <Text style={styles.allContactsShortcutText}>
+              View All Family & Doctors ({contacts.length}) →
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -607,6 +618,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  allContactsShortcutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#CCFBF1',
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: '#99F6E4',
+  },
+  allContactsShortcutText: {
+    color: '#0F766E',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   silverPulseDevCard: {
     flexDirection: 'row',

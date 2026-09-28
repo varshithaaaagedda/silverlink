@@ -9,6 +9,10 @@ interface WebContainerProps {
 export const WebContainer: React.FC<WebContainerProps> = ({ children }) => {
   const { role, switchRole } = useApp();
 
+  if (Platform.OS !== 'web') {
+    return <View style={styles.nativeContainer}>{children}</View>;
+  }
+
   return (
     <View style={styles.outerBackground}>
       <View style={styles.webHeaderBar}>
@@ -121,6 +125,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   screenInner: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  nativeContainer: {
     flex: 1,
     backgroundColor: '#F8FAFC',
   },

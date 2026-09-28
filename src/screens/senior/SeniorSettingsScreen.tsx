@@ -70,6 +70,15 @@ export const SeniorSettingsScreen: React.FC<{ navigation: any }> = ({ navigation
           onPress={() => switchRole('caregiver')}
           style={{ marginTop: 14 }}
         />
+
+        <SeniorButton
+          title="Sign Out / Switch Profile"
+          variant="secondary"
+          onPress={() => {
+            navigation.navigate('Auth');
+          }}
+          style={{ marginTop: 12, backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' }}
+        />
       </View>
     </ScrollView>
   );

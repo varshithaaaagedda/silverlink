@@ -8,6 +8,23 @@ const STORAGE_KEYS = {
   CONTACTS: '@silverlink_contacts_v1',
   USER_PROFILE: '@silverlink_user_profile_v1',
   STATUS: '@silverlink_status_v1',
+  CAREGIVER_SETTINGS: '@silverlink_caregiver_settings_v1',
+};
+
+export interface CaregiverSettings {
+  pushNotifs: boolean;
+  sosCallout: boolean;
+  missedDoseTimeout: string;
+  emergencyPhone?: string;
+  doctorPhone?: string;
+}
+
+export const INITIAL_CAREGIVER_SETTINGS: CaregiverSettings = {
+  pushNotifs: true,
+  sosCallout: true,
+  missedDoseTimeout: '30 mins',
+  emergencyPhone: '(555) 234-5678',
+  doctorPhone: '(555) 987-6543',
 };
 
 // Initial Sample Data for Hackathon Demo
@@ -310,5 +327,49 @@ export class DataService {
     }
     await AsyncStorage.setItem(STORAGE_KEYS.STATUS, JSON.stringify(INITIAL_SENIOR_STATUS));
     return INITIAL_SENIOR_STATUS;
+  }
+
+  static async updateMedication(med: Medication): Promise<Medication[]> {
+    const meds = await this.getMedications();
+    const updated = meds.map(m => (m.id === med.id ? { ...m, ...med } : m));
+    await this.saveMedications(updated);
+    return updated;
+  }
+
+  static async deleteMedication(id: string): Promise<Medication[]> {
+    const meds = await this.getMedications();
+    const updated = meds.filter(m => m.id !== id);
+    await this.saveMedications(updated);
+    return updated;
+  }
+
+  static async clearAcknowledgedAlerts(): Promise<CaregiverAlert[]> {
+    const alerts = await this.getAlerts();
+    const updated = alerts.filter(a => !a.acknowledged);
+    await AsyncStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(updated));
+    return updated;
+  }
+
+  static async saveSeniorStatus(statusUpdate: Partial<SeniorStatus>): Promise<SeniorStatus> {
+    const current = await this.getSeniorStatus();
+    const updated: SeniorStatus = { ...current, ...statusUpdate };
+    await AsyncStorage.setItem(STORAGE_KEYS.STATUS, JSON.stringify(updated));
+    return updated;
+  }
+
+  static async getCaregiverSettings(): Promise<CaregiverSettings> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.CAREGIVER_SETTINGS);
+      if (data) return JSON.parse(data);
+    } catch (e) {
+      console.warn('Storage read error for settings:', e);
+    }
+    await AsyncStorage.setItem(STORAGE_KEYS.CAREGIVER_SETTINGS, JSON.stringify(INITIAL_CAREGIVER_SETTINGS));
+    return INITIAL_CAREGIVER_SETTINGS;
+  }
+
+  static async saveCaregiverSettings(settings: CaregiverSettings): Promise<CaregiverSettings> {
+    await AsyncStorage.setItem(STORAGE_KEYS.CAREGIVER_SETTINGS, JSON.stringify(settings));
+    return settings;
   }
 }

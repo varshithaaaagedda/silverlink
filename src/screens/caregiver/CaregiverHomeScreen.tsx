@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { AddMedicineModal } from '../../components/caregiver/AddMedicineModal';
@@ -12,12 +12,15 @@ export const CaregiverHomeScreen: React.FC<{ navigation: any }> = ({ navigation 
     checkIns,
     alerts,
     seniorStatus,
+    updateSeniorStatus,
     acknowledgeAlert,
+    triggerSos,
     contacts,
     switchRole,
   } = useApp();
 
   const [isAddMedModalVisible, setIsAddMedModalVisible] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   const seniorContact = contacts.find(c => c.id === 'contact_1') || contacts[0];
   const unacknowledgedAlerts = alerts.filter(a => !a.acknowledged);
@@ -26,6 +29,49 @@ export const CaregiverHomeScreen: React.FC<{ navigation: any }> = ({ navigation 
   const adherenceRate = medications.length > 0 ? Math.round((takenMeds.length / medications.length) * 100) : 100;
 
   const todayCheckIn = checkIns[0];
+
+  const showNotification = (msg: string) => {
+    setFeedbackMessage(msg);
+    setTimeout(() => {
+      setFeedbackMessage(null);
+    }, 4000);
+  };
+
+  const handleCallSenior = () => {
+    const phone = '(555) 123-4567';
+    if (Platform.OS === 'web') {
+      window.alert(`Simulating Phone Call: Dialing Eleanor Vance at ${phone}...`);
+    } else {
+      Linking.openURL(`tel:5551234567`).catch(() => {
+        Alert.alert('Call Senior', `Dialing Eleanor Vance (${phone})...`);
+      });
+    }
+  };
+
+  const handleToggleGeofence = () => {
+    if (seniorStatus.isSafeAtHome) {
+      updateSeniorStatus({
+        isSafeAtHome: false,
+        locationName: 'Away - Oakridge Medical Center',
+      });
+      showNotification('Geofence updated: Eleanor is at Oakridge Medical Center.');
+    } else {
+      updateSeniorStatus({
+        isSafeAtHome: true,
+        locationName: 'Home - Oakridge Residence',
+      });
+      showNotification('Geofence updated: Eleanor is Safe at Home.');
+    }
+  };
+
+  const handlePingSenior = () => {
+    showNotification('Sent push reminder: "Hi Mom, please remember to log your daily check-in!"');
+  };
+
+  const handleTestSosAlert = () => {
+    triggerSos('DEMO TEST: Emergency SOS test triggered from caregiver control center.');
+    showNotification('Simulated Emergency SOS alert generated for Eleanor.');
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -40,6 +86,14 @@ export const CaregiverHomeScreen: React.FC<{ navigation: any }> = ({ navigation 
           <Text style={styles.switchChipText}>Senior UI</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Floating Status Notification Toast */}
+      {feedbackMessage && (
+        <View style={styles.feedbackToast}>
+          <Ionicons name="notifications-circle" size={22} color="#1D4ED8" />
+          <Text style={styles.feedbackToastText}>{feedbackMessage}</Text>
+        </View>
+      )}
 
       {/* Active Critical Alerts Notice Banner */}
       {unacknowledgedAlerts.length > 0 ? (
@@ -91,18 +145,25 @@ export const CaregiverHomeScreen: React.FC<{ navigation: any }> = ({ navigation 
           </View>
           <TouchableOpacity
             style={styles.callSeniorCircleBtn}
-            onPress={() => alert("Calling Eleanor Vance ((555) 123-4567)...")}
+            onPress={handleCallSenior}
+            accessibilityLabel="Call Eleanor Vance"
           >
             <Ionicons name="call" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.metricsGrid}>
-          <View style={styles.metricBox}>
-            <Ionicons name="shield-checkmark" size={22} color="#10B981" />
-            <Text style={styles.metricLabel}>Geofence</Text>
-            <Text style={styles.metricValue}>Safe at Home</Text>
-          </View>
+          <TouchableOpacity style={styles.metricBox} onPress={handleToggleGeofence}>
+            <Ionicons
+              name={seniorStatus.isSafeAtHome ? 'shield-checkmark' : 'walk'}
+              size={22}
+              color={seniorStatus.isSafeAtHome ? '#10B981' : '#D97706'}
+            />
+            <Text style={styles.metricLabel}>Geofence (Tap)</Text>
+            <Text style={styles.metricValue}>
+              {seniorStatus.isSafeAtHome ? 'Safe at Home' : 'Away (Tap)'}
+            </Text>
+          </TouchableOpacity>
 
           <View style={styles.metricBox}>
             <Ionicons name="battery-charging" size={22} color="#2563EB" />
@@ -115,6 +176,35 @@ export const CaregiverHomeScreen: React.FC<{ navigation: any }> = ({ navigation 
             <Text style={styles.metricLabel}>Last Active</Text>
             <Text style={styles.metricValue}>{seniorStatus.lastActiveTime}</Text>
           </View>
+        </View>
+
+        {/* Quick Actions Shortcuts Row */}
+        <View style={styles.quickActionsRow}>
+          <TouchableOpacity style={styles.quickActionBtn} onPress={handlePingSenior}>
+            <Ionicons name="chatbubble-ellipses" size={18} color="#2563EB" />
+            <Text style={styles.quickActionText}>Ping Senior</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => setIsAddMedModalVisible(true)}
+          >
+            <Ionicons name="add-circle" size={18} color="#059669" />
+            <Text style={[styles.quickActionText, { color: '#059669' }]}>+ Add Med</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.quickActionBtn} onPress={handleTestSosAlert}>
+            <Ionicons name="alert-circle" size={18} color="#DC2626" />
+            <Text style={[styles.quickActionText, { color: '#DC2626' }]}>Test Alert</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => navigation.navigate('CaregiverCheckIns')}
+          >
+            <Ionicons name="heart" size={18} color="#7C3AED" />
+            <Text style={[styles.quickActionText, { color: '#7C3AED' }]}>View Logs</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -389,6 +479,48 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0F172A',
     marginTop: 2,
+  },
+  feedbackToast: {
+    backgroundColor: '#DBEAFE',
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  feedbackToastText: {
+    color: '#1E40AF',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  quickActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 8,
+    gap: 4,
+  },
+  quickActionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2563EB',
   },
   card: {
     backgroundColor: '#FFFFFF',

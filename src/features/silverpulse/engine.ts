@@ -72,8 +72,8 @@ export class SilverPulseEngine {
       targetEventType: targetType,
       expectedTime: this.baseline.morningCheckInStart,
       observedTime: null,
-      severity: 'medium',
-      explanation,
+      severity: 'MODERATE',
+      reason: explanation,
     };
 
     const deviationEvent: SeniorEvent = {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { SpeechService } from '../../services/speechService';
@@ -11,12 +11,22 @@ export const FamilyContactsScreen: React.FC<{ navigation: any }> = ({ navigation
 
   const handleCall = (contact: FamilyContact) => {
     SpeechService.speakText(`Calling ${contact.name}`);
-    alert(`Calling ${contact.name} (${contact.phone})...`);
+    if (Platform.OS === 'web') {
+      window.alert(`Simulating Phone Call: Dialing ${contact.name} (${contact.phone})...`);
+    } else {
+      Linking.openURL(`tel:${contact.phone.replace(/[^0-9]/g, '')}`).catch(() => {
+        Alert.alert('Calling Contact', `Dialing ${contact.name} (${contact.phone})...`);
+      });
+    }
   };
 
   const handleVideoCall = (contact: FamilyContact) => {
     SpeechService.speakText(`Starting video call with ${contact.name}`);
-    alert(`Starting Video Call with ${contact.name}...`);
+    if (Platform.OS === 'web') {
+      window.alert(`Simulating HD Video Call: Connecting with ${contact.name}...`);
+    } else {
+      Alert.alert('Video Call', `Connecting video call with ${contact.name}...`);
+    }
   };
 
   return (

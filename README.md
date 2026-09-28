@@ -18,15 +18,19 @@ Designed for extreme simplicity, high contrast, and low cognitive load:
   - *"I need help"*
 - **Emergency SOS Center**: Prominent, red 1-tap SOS trigger with a 3-second safety countdown, acoustic alarm, direct dialers (911 / Caregiver), and live location status.
 - **Daily Check-In**: "How are you feeling today?" with massive emoji options (😊 Good, 😐 Okay, 😟 Not feeling well) and symptom logging.
-- **Medication Tracker**: Daily schedule grouped by time of day (Morning, Afternoon, Evening, Night) with visual status badges (Taken / Pending / Missed).
-- **Family Contact Cards**: 1-tap phone dialer and video call simulator.
+- **Medication Tracker**: Daily schedule grouped by time of day (Morning, Afternoon, Evening, Night) with visual status badges (Taken / Due / Upcoming / Skipped / Missed).
+- **Family Contact Cards**: 1-tap phone dialer, video call simulator, and doctor quick-access.
+- **SilverPulse Routine Intelligence**: Background routine anomaly detection that prompts the senior before non-emergency escalations.
+- **Accessibility Engine**: Extra High Contrast mode, customizable voice assistance audio readouts, and live ticking clock.
 
 ### 📱 Family Caregiver Dashboard
 Designed for real-time monitoring and peace of mind:
-- **Senior Status Summary**: Live status card showing location ("Home - Oakridge Residence"), battery level, and last active timestamp.
-- **Medication Adherence Monitor**: Percentage progress bar tracking completed vs pending doses, with remote scheduling and override capabilities.
-- **Wellness & Mood Log**: Daily check-in log history with symptom breakdowns and mood analytics.
-- **Real-Time Alert Center**: Priority push & in-app alerts for Emergency SOS, missed medication reminders, or low wellness check-ins.
+- **Senior Status Summary**: Live status card showing geofence location ("Home - Oakridge Residence"), battery level indicator, and real-time last active timestamp.
+- **Quick Action Control Bar**: One-tap tools to ping the senior for a check-in, schedule new prescriptions, simulate emergency alerts, and call Eleanor directly.
+- **Full Medication Regimen Management**: Schedule new prescriptions, edit existing doses and instructions, delete discontinued medicines, and view adherence stats.
+- **Wellness & Mood Log**: Daily check-in log history with mood breakdowns and symptom trends.
+- **Real-Time Alert Center**: Priority push & in-app alerts for Emergency SOS, missed medication reminders, or low wellness check-ins, with filter chips and resolution controls.
+- **Caregiver Settings & Preferences**: Persisted notification preferences, missed dose timeout thresholds, and demo account controls.
 
 ---
 
