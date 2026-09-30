@@ -1,17 +1,21 @@
 # 👵 SilverLink — Keeping Seniors Connected and Safe
 
-> A mobile-first hackathon MVP built with **React Native**, **Expo**, **TypeScript**, and **Firebase**, connecting senior citizens with their family caregivers to promote senior independence while providing peace of mind to loved ones.
+<p align="center">
+  <img src="./assets/thumbnail.png" alt="SilverLink Showcase" width="480" />
+</p>
+
+> **SilverLink** is a dual-interface mobile and web companion built with **React Native**, **Expo (SDK 51)**, **TypeScript**, and **Firebase**. It bridges senior independence with caregiver peace of mind, pairing an ultra-accessible interface with a real-time monitoring and medication dashboard.
 
 ---
 
 ## 🌟 Key Features
 
-SilverLink provides two dedicated interface modes tailored to each user role:
+SilverLink provides two synchronized interface modes tailored to each user role:
 
 ### 👵 Senior App (Accessibility-First Design)
 Designed for extreme simplicity, high contrast, and low cognitive load:
-- **Large Touch Targets & Typography**: 20px–36px readable text and 64px+ button tap targets.
-- **Voice Assistant**: Hands-free voice control powered by Web Speech API (Speech Recognition & Text-To-Speech). Supports natural commands:
+- **Large Touch Targets & Typography**: 20px–36px readable text and 64px+ oversized touch targets.
+- **Voice Assistant**: Hands-free voice interactions powered by Web Speech API (`SpeechRecognition` & `SpeechSynthesis`). Supports natural voice prompts:
   - *"Remind me to take my medicine at 8 PM"*
   - *"Call my daughter"*
   - *"Show my medicines"*
@@ -37,9 +41,10 @@ Designed for real-time monitoring and peace of mind:
 ## 🛠️ Tech Stack
 
 - **Framework**: React Native with Expo (SDK 51)
+- **Web Support**: React Native Web with Vercel deployment support
 - **Language**: TypeScript
 - **Navigation**: React Navigation v6 (Native Stack & Bottom Tabs)
-- **Backend**: Firebase Auth & Firestore (with automatic zero-config demo fallback)
+- **Backend & Storage**: Firebase Auth & Firestore (with offline-resilient local AsyncStorage fallback)
 - **Speech Engine**: Web Speech API (`SpeechRecognition` & `SpeechSynthesis`)
 - **Icons & Styling**: `@expo/vector-icons` (Ionicons) & Custom Senior Accessibility Theme Engine
 
@@ -66,7 +71,7 @@ Designed for real-time monitoring and peace of mind:
 
 3. **Run locally with Expo**:
    ```bash
-   # Start Expo dev server (Web preview enabled)
+   # Start Expo dev server for Web preview
    npm run web
    
    # Or start standard Expo dev server for iOS/Android
@@ -89,7 +94,7 @@ SilverLink includes built-in **1-Tap Demo Roles** for instant reviewer evaluatio
 
 ```
 silverlink/
-├── assets/                  # App icons and splash screen assets
+├── assets/                  # App icons, splash screen, and hackathon presentation thumbnail
 ├── src/
 │   ├── components/
 │   │   ├── caregiver/       # AddMedicineModal, Caregiver widgets
